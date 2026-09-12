@@ -12,6 +12,7 @@ async function rewrite(directory) {
       const source = await readFile(path, 'utf8');
       const updated = source
         .replaceAll('/_next/', '/ruru-puzzleplay/_next/')
+        .replaceAll('"_next/', '"/ruru-puzzleplay/_next/')
         .replaceAll('/favicon.svg', '/ruru-puzzleplay/favicon.svg')
         .replaceAll('/default-puzzle.png', '/ruru-puzzleplay/default-puzzle.png');
       if (updated !== source) await writeFile(path, updated);
