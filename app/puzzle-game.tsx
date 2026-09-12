@@ -26,6 +26,7 @@ const formatTime = (tenths: number) => `${String(Math.floor(tenths / 600)).padSt
 export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
   const [size, setSize] = useState(3);
   const [image, setImage] = useState(starterImage);
+  const [hasUploadedImage, setHasUploadedImage] = useState(false);
   const [boards, setBoards] = useState<number[][]>(() => [reverseOrder(3), reverseOrder(3)]);
   const [selected, setSelected] = useState<(number | null)[]>([null, null]);
   const [moves, setMoves] = useState([0, 0]);
@@ -65,6 +66,7 @@ export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
     setBoards([[...layout], [...layout]]); setSelected([null, null]); setMoves([0, 0]); setTimes([0, 0]); setFinished([false, false]); setRunning(false); setCountdown(null);
   };
   const startRound = () => {
+    if (!hasUploadedImage) return;
     audio();
     const layout = shuffled(size);
     setBoards([[...layout], [...layout]]); setSelected([null, null]); setMoves([0, 0]); setTimes([0, 0]); setFinished([false, false]); setRunning(false); setRound((value) => value + 1);
@@ -102,7 +104,7 @@ export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
   };
   const upload = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0]; if (!file || !file.type.startsWith('image/')) return;
-    const reader = new FileReader(); reader.onload = () => { setImage(String(reader.result)); prepareRound(size); }; reader.readAsDataURL(file); event.target.value = '';
+    const reader = new FileReader(); reader.onload = () => { setImage(String(reader.result)); setHasUploadedImage(true); prepareRound(size); }; reader.readAsDataURL(file); event.target.value = '';
   };
 
   const players = mode === 'single' ? [0] : [0, 1];
@@ -122,7 +124,7 @@ export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
           {levels.map((level) => <button key={level.size} type="button" role="radio" aria-checked={size === level.size} disabled={running || countdown !== null} className={size === level.size ? 'active' : ''} onClick={() => { setSize(level.size); prepareRound(level.size); }}><strong>{level.label}</strong><span>{level.note}</span></button>)}
         </div>
         <div className="fair-note"><Sparkles size={18} /><span>{mode === 'dual' ? '兩邊的拼圖片順序完全相同' : '完成拼圖並記錄時間'}</span></div>
-        <button className="start-button" type="button" disabled={running || countdown !== null} onClick={startRound}>{round ? <RefreshCw size={21} /> : <Volume2 size={21} />}{round ? (mode === 'dual' ? '再比一場' : '再玩一次') : (mode === 'dual' ? '開始 PK' : '開始拼圖')}</button>
+        <button className="start-button" type="button" disabled={!hasUploadedImage || running || countdown !== null} onClick={startRound}>{round ? <RefreshCw size={21} /> : <Volume2 size={21} />}{round ? (mode === 'dual' ? '再比一場' : '再玩一次') : (mode === 'dual' ? '開始 PK' : '開始拼圖')}</button>
       </section>
 
       <section className="arena">
@@ -145,7 +147,7 @@ export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
         ))}
       </section>
 
-      {!running && countdown === null && round === 0 && <p className="start-hint">{mode === 'dual' ? '一起選好圖片與難度，兩位玩家準備好後按下「開始 PK」' : '選好圖片與難度後，按下「開始拼圖」'}</p>}
+      {!running && countdown === null && round === 0 && <p className="start-hint">{!hasUploadedImage ? '請先上傳一張照片，才能開始遊戲。' : mode === 'dual' ? '照片已準備完成，兩位玩家準備好後按下「開始 PK」' : '照片已準備完成，按下「開始拼圖」'}</p>}
       {countdown !== null && <div className="countdown" role="status" aria-live="assertive"><span>{countdown === 'GO' ? '開始！' : countdown}</span></div>}
       {mode === 'dual' && finished.every(Boolean) && <div className="all-finished" role="status"><Sparkles size={28} /><strong>兩位都完成了！</strong><span>為彼此拍拍手！</span></div>}
     </main>
