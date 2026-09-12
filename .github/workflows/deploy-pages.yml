@@ -35,7 +35,7 @@ jobs:
         env:
           NEXT_PUBLIC_BASE_PATH: '/ruru-puzzleplay'
       - name: Apply GitHub Pages asset path
-        run: sed -i 's|/_next/|/ruru-puzzleplay/_next/|g' dist/client/index.html
+        run: node scripts/prepare-github-pages.mjs
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload Pages artifact
