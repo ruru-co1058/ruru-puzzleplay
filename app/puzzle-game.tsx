@@ -23,7 +23,7 @@ const shuffled = (size: number) => {
 };
 const formatTime = (tenths: number) => `${String(Math.floor(tenths / 600)).padStart(2, '0')}:${String(Math.floor((tenths % 600) / 10)).padStart(2, '0')}.${tenths % 10}`;
 
-export default function Home() {
+export default function Home({ mode = 'dual' }: { mode?: 'single' | 'dual' }) {
   const [size, setSize] = useState(3);
   const [image, setImage] = useState(starterImage);
   const [boards, setBoards] = useState<number[][]>(() => [reverseOrder(3), reverseOrder(3)]);
@@ -75,7 +75,8 @@ export default function Home() {
   const completePlayer = (player: number) => {
     setFinished((current) => {
       const next = [...current]; next[player] = true;
-      if (next.every(Boolean)) { setRunning(false); window.setTimeout(finale, 120); } else cheer();
+      if (mode === 'single') { setRunning(false); window.setTimeout(finale, 120); }
+      else if (next.every(Boolean)) { setRunning(false); window.setTimeout(finale, 120); } else cheer();
       return next;
     });
   };
@@ -104,14 +105,15 @@ export default function Home() {
     const reader = new FileReader(); reader.onload = () => { setImage(String(reader.result)); prepareRound(size); }; reader.readAsDataURL(file); event.target.value = '';
   };
 
-  const leader = finished[0] !== finished[1] ? (finished[0] ? 0 : 1) : null;
+  const players = mode === 'single' ? [0] : [0, 1];
+  const leader = mode === 'dual' && finished[0] !== finished[1] ? (finished[0] ? 0 : 1) : null;
   const progress = useMemo(() => boards.map((board) => Math.round(board.filter((piece, index) => piece === index).length / board.length * 100)), [boards]);
 
   return (
-    <main className="pk-shell">
+    <main className={`pk-shell ${mode === 'single' ? 'single-puzzle' : ''}`}>
       <header className="pk-topbar">
         <div className="pk-logo"><Swords size={25} /></div>
-        <div><p className="eyebrow">雙人公平挑戰</p><h1>拼圖 PK 賽！</h1></div>
+        <div><p className="eyebrow">{mode === 'dual' ? '雙人公平挑戰' : '單人計時挑戰'}</p><h1>{mode === 'dual' ? '拼圖 PK 賽！' : '照片拼圖挑戰'}</h1></div>
         <label className="upload-button"><ImagePlus size={20} /><span>選擇圖片</span><input type="file" accept="image/*" onChange={upload} /></label>
       </header>
 
@@ -119,12 +121,12 @@ export default function Home() {
         <div className="level-picker" role="radiogroup" aria-label="選擇難度">
           {levels.map((level) => <button key={level.size} type="button" role="radio" aria-checked={size === level.size} disabled={running || countdown !== null} className={size === level.size ? 'active' : ''} onClick={() => { setSize(level.size); prepareRound(level.size); }}><strong>{level.label}</strong><span>{level.note}</span></button>)}
         </div>
-        <div className="fair-note"><Sparkles size={18} /><span>兩邊的拼圖片順序完全相同</span></div>
-        <button className="start-button" type="button" disabled={running || countdown !== null} onClick={startRound}>{round ? <RefreshCw size={21} /> : <Volume2 size={21} />}{round ? '再比一場' : '開始 PK'}</button>
+        <div className="fair-note"><Sparkles size={18} /><span>{mode === 'dual' ? '兩邊的拼圖片順序完全相同' : '完成拼圖並記錄時間'}</span></div>
+        <button className="start-button" type="button" disabled={running || countdown !== null} onClick={startRound}>{round ? <RefreshCw size={21} /> : <Volume2 size={21} />}{round ? (mode === 'dual' ? '再比一場' : '再玩一次') : (mode === 'dual' ? '開始 PK' : '開始拼圖')}</button>
       </section>
 
       <section className="arena">
-        {[0, 1].map((player) => (
+        {players.map((player) => (
           <article className={`player-zone player-${player + 1} ${leader === player ? 'winner' : ''}`} key={player}>
             <div className="player-heading">
               <div><span className="player-badge">玩家 {player + 1}</span><strong>{finished[player] ? '完成！' : running ? '加油！' : '準備好了'}</strong></div>
@@ -143,9 +145,9 @@ export default function Home() {
         ))}
       </section>
 
-      {!running && countdown === null && round === 0 && <p className="start-hint">選好圖片與難度，兩位玩家準備好後按下「開始 PK」</p>}
+      {!running && countdown === null && round === 0 && <p className="start-hint">{mode === 'dual' ? '一起選好圖片與難度，兩位玩家準備好後按下「開始 PK」' : '選好圖片與難度後，按下「開始拼圖」'}</p>}
       {countdown !== null && <div className="countdown" role="status" aria-live="assertive"><span>{countdown === 'GO' ? '開始！' : countdown}</span></div>}
-      {finished.every(Boolean) && <div className="all-finished" role="status"><Sparkles size={28} /><strong>兩位都完成了！</strong><span>為彼此拍拍手！</span></div>}
+      {mode === 'dual' && finished.every(Boolean) && <div className="all-finished" role="status"><Sparkles size={28} /><strong>兩位都完成了！</strong><span>為彼此拍拍手！</span></div>}
     </main>
   );
 }
